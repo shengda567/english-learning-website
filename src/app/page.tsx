@@ -1,101 +1,118 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
+import EnglishCard from '../components/EnglishCard';
+import Sidebar from '../components/Sidebar';
+import TopNav from '../components/TopNav';
+
+
+interface Card {
+  frontContent: string;
+  backContent: string;
+  category: string;
+}
+
+// Function to generate a large number of test cards with categories
+const generateTestCards = (count: number): Card[] => {
+  const categories = ['Greetings', 'Phrases', 'Grammar', 'Vocabulary', 'Idioms', 'Slang', 'Business', 'Academic'];
+  return Array.from({ length: count }, (_, i) => {
+    const randomCategory = categories[Math.floor(Math.random() * categories.length)];
+    return {
+      frontContent: `${randomCategory} ${i + 1}`,
+      backContent: `Definition for ${randomCategory} ${i + 1}`,
+      category: randomCategory
+    };
+  });
+};
+
+const allCardData: Card[] = generateTestCards(100);
+
+const categories = ['All', 'Greetings', 'Phrases', 'Grammar', 'Vocabulary', 'Idioms', 'Slang', 'Business', 'Academic'];
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [visibleCards, setVisibleCards] = useState<Card[]>([]);
+  const [loading, setLoading] = useState(false);
+  const loadMoreRef = useRef(null);
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  const filteredCards: Card[] = selectedCategory === 'All' 
+  ? allCardData 
+  : allCardData.filter(card => card.category === selectedCategory);
+
+  useEffect(() => {
+    setVisibleCards(filteredCards.slice(0, 10));
+  }, [selectedCategory]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !loading) {
+          loadMoreCards();
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [loading, visibleCards]);
+
+  const loadMoreCards = () => {
+    setLoading(true);
+    setTimeout(() => {
+      const currentLength = visibleCards.length;
+      const newCards = filteredCards.slice(currentLength, currentLength + 10);
+      setVisibleCards(prevCards => [...prevCards, ...newCards]);
+      setLoading(false);
+    }, 500);
+  };
+  
+  const handleCategoryClick = (category: string) => {
+    setSelectedCategory(category);
+    // Reset visible cards when changing category
+    setVisibleCards([]);
+  };
+
+  return (
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar />
+      <main className="flex-1 flex flex-col overflow-hidden">
+        <TopNav />
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="bg-white shadow-md py-3 px-4 z-10">
+            <div className="flex space-x-4 overflow-x-auto scrollbar-hide">
+              {categories.map((category, index) => (
+                <button 
+                  key={index} 
+                  className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+                    selectedCategory === category 
+                      ? 'bg-blue-500 text-white' 
+                      : 'bg-gray-100 hover:bg-gray-200'
+                  }`}
+                  onClick={() => handleCategoryClick(category)}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex-1 overflow-y-auto px-4 py-2">
+            <div className="grid grid-cols-5 gap-4">
+              {visibleCards.map((card, index) => (
+                <EnglishCard key={index} frontContent={card.frontContent} backContent={card.backContent} />
+              ))}
+            </div>
+            {visibleCards.length < filteredCards.length && (
+              <div ref={loadMoreRef} className="text-center py-4">
+                {loading ? 'Loading more cards...' : 'Scroll for more'}
+              </div>
+            )}
+          </div>
         </div>
       </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
