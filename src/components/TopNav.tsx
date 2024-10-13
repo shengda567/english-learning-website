@@ -1,24 +1,40 @@
-import Image from 'next/image';
+"use client";
 
-const TopNav = () => {
+import { Button } from "@/components/ui/button";
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
+import { Menu, X } from "lucide-react";
+import { useState } from "react";
+
+export default function Header() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
+
   return (
-    <nav className="bg-white shadow-md px-4 py-2 flex items-center justify-between">
-      <div className="flex items-center">
-        <Image src="/tiktok-logo.png" alt="TikTok Logo" width={28} height={28} />
-        <h1 className="ml-2 text-lg font-bold">EnglishTok</h1>
+    <div className="flex items-center space-x-4 justify-end mt-4 mr-4">
+      <SignedOut>
+        <SignInButton />
+      </SignedOut>
+      <SignedIn>
+        <UserButton />
+      </SignedIn>
+      <div className="md:hidden">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleMenu}
+          aria-label="Toggle menu"
+        >
+          {isMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </Button>
       </div>
-      <div className="flex-1 max-w-2xl mx-6">
-        <input 
-          type="text" 
-          placeholder="Search"
-          className="w-full px-3 py-1.5 text-sm rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-300"
-        />
-      </div>
-      <button className="bg-red-500 text-white px-4 py-1.5 text-sm rounded-full hover:bg-red-600 transition">
-        Log in
-      </button>
-    </nav>
+      {isMenuOpen && (
+        <div className="md:hidden">
+          {/* Add your mobile menu items here */}
+        </div>
+      )}
+    </div>
   );
-};
-
-export default TopNav;
+}
