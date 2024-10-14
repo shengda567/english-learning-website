@@ -40,6 +40,8 @@ export default function Home() {
   const [showModal, setShowModal] = useState(false);
   const loadMoreRef = useRef(null);
   const [cardsToMove, setCardsToMove] = useState<string[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const cardsPerPage = 10;
 
   useEffect(() => {
     const storedCards = localStorage.getItem('allCards');
@@ -124,6 +126,11 @@ export default function Home() {
     setVisibleCards(newVisibleCards.slice(0, 10));
   };
 
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+  };
+
+  const totalPages = Math.ceil(visibleCards.length / cardsPerPage);
 
   return (
     <div className="flex h-screen bg-gray-100">
@@ -131,13 +138,13 @@ export default function Home() {
       <main className="flex-1 flex flex-col overflow-hidden">
         <TopNav />
         <div className="flex-1 flex flex-col px-4 py-2 overflow-y-auto">
-          <div className="sticky top-0 bg-gray-100 z-10 pb-4">
-            <div className="flex justify-between items-center mb-4">
-              <div className="flex space-x-4 overflow-x-auto py-3 scrollbar-hide">
+          <div className="sticky top-0 bg-gray-100 z-10 pb-2">
+            <div className="flex justify-between items-center mb-2">
+              <div className="flex space-x-2 overflow-x-auto py-2 scrollbar-hide">
                 {categories.map((category, index) => (
                   <button 
                     key={index} 
-                    className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+                    className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
                       selectedCategory === category 
                         ? 'bg-blue-500 text-white' 
                         : 'bg-white hover:bg-gray-200'
@@ -150,18 +157,18 @@ export default function Home() {
               </div>
               <button
                 onClick={handleMoveLearnedCards}
-                className={`px-4 py-2 rounded-full text-sm whitespace-nowrap transition-colors ${
+                className={`px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors ${
                   cardsToMove.length > 0
                     ? 'bg-green-500 text-white hover:bg-green-600'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
                 disabled={cardsToMove.length === 0}
               >
-                Move Learned Cards ({cardsToMove.length})
+                Move Learned ({cardsToMove.length})
               </button>
             </div>
           </div>
-          <div className="grid grid-cols-5 gap-4">
+          <div className="grid grid-cols-5 gap-4 mb-4">
             {visibleCards.map((card) => (
               <EnglishCard 
                 key={card.id} 
@@ -171,11 +178,19 @@ export default function Home() {
               />
             ))}
           </div>
-          {visibleCards.length < allCards.filter(card => !card.isLearned && card.visibleOnMainPage).length && (
-            <div ref={loadMoreRef} className="text-center py-4">
-              {loading ? 'Loading more cards...' : 'Scroll for more'}
-            </div>
-          )}
+          <div className="flex justify-center mt-2">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`mx-1 px-3 py-1 rounded ${
+                  currentPage === page ? 'bg-blue-500 text-white' : 'bg-white'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
         </div>
       </main>
       <ConfirmationModal
